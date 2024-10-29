@@ -5,3 +5,4 @@ Flask-Migrate
 twilio
 apscheduler
 psycopg2-binary
+python-dotenv
