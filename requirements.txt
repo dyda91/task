@@ -1,0 +1,7 @@
+Flask
+Flask-WTF
+Flask-SQLAlchemy
+Flask-Migrate
+twilio
+apscheduler
+psycopg2-binary

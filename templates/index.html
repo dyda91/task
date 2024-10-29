@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 bg-light">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="display-4">
+            <i class="bi bi-card-checklist"></i>
+            Lista de Tarefas
+        </h1>
+        <button type="button" class="btn btn-primary mb-2" data-toggle="modal" data-target="#addEventModal">
+            <i class="bi bi-plus-square"></i>
+             Adicionar Nova Tarefa
+        </button>
+    </div>
+</div>
+
+<!-- Modal para adicionar nova tarefa -->
+<div class="modal fade {% if show_modal %}show{% endif %}" id="addEventModal" tabindex="-1" role="dialog" aria-labelledby="addEventModalLabel" aria-hidden="true" {% if show_modal %}style="display: block;"{% endif %}>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Adicionar Nova Tarefa</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_event') }}" method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form.task.label }}
+                        {{ form.task(class="form-control", required=True) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.name.label }}
+                        {{ form.name(class="form-control", required=True) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.process_number.label }}
+                        {{ form.process_number(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.date.label }}
+                        {{ form.date(class="form-control", required=True) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.time.label }}
+                        {{ form.time(class="form-control", required=True) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.link.label }}
+                        {{ form.link(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.notes.label }}
+                        {{ form.notes(rows=4, class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        <label>Situação</label>
+                        <select name="situation" class="form-control" required>
+                            <option value="0">Não se Aplica</option>
+                            <option value="1">Não Avisado</option>
+                            <option value="2">Avisado</option>
+                            <option value="3">Avisado Marcelo</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de eventos -->
+<table class="table mt-4">
+    <thead>
+        <tr class="table-secondary"> 
+            <th>Tarefa</th>
+            <th>Nome</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Situação</th>
+            <th>Link</th>
+            <th>Notas</th>
+            <th>Editar/Excluir</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for evento in eventos.items %}
+        <tr class="{% if evento.notified %}table-info{% endif %}">
+            <td class="fixed-cell">
+                {% if evento.task == 0 %} Audiência
+                {% elif evento.task == 1 %} Recurso
+                {% elif evento.task == 2 %} Emenda
+                {% else %} Desconhecido
+                {% endif %}
+            </td>
+            <td class="fixed-cell">{{ evento.name }}</td>
+            <td class="fixed-cell">{{ evento.date }}</td>
+            <td class="fixed-cell">{{ evento.time }}</td>
+            <td class="fixed-cell {% if evento.situation == 0 %}text-secondary{% elif evento.situation == 1 %}text-danger{% else %}table-success{% endif %}">
+                {% if evento.situation == 0 %} Não Avisado
+                {% elif evento.situation == 1 %} Não se Aplica
+                {% elif evento.situation == 2 %} Avisado
+                {% else %} Avisado Marcelo
+                {% endif %}
+            </td>
+            <td class="fixed-cell">{{ evento.link }}</td>
+            <td class="fixed-cell">{{ evento.notes }}</td>
+            <td class="fixed-cell">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editEventModal{{ evento.id }}">
+                    <i class="bi bi-pencil-square"></i>
+                </button>
+                <form action="{{ url_for('delete_event', id=evento.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta tarefa?');">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </td>
+        </tr>
+
+        <!-- Modal de edição -->
+        <div class="modal fade" id="editEventModal{{ evento.id }}" tabindex="-1" role="dialog" aria-labelledby="editEventModalLabel{{ evento.id }}" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editEventModalLabel{{ evento.id }}">Editar Evento</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="{{ url_for('update_event', id=evento.id) }}" method="POST">
+                            <input type="hidden" name="process_number" value="{{ evento.process_number }}">
+                            <div class="form-group">
+                                <label>Nome do Evento</label>
+                                <input type="text" name="name" class="form-control" value="{{ evento.name }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Data</label>
+                                <input type="date" name="date" class="form-control" value="{{ evento.date }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Hora</label>
+                                <input type="time" name="time" class="form-control" value="{{ evento.time }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Situação</label>
+                                <select class="form-control" name="situation" required>
+                                    <option value="0" {% if evento.situation == 0 %}selected{% endif %}>Não Avisado</option>
+                                    <option value="1" {% if evento.situation == 1 %}selected{% endif %}>Não se Aplica</option>
+                                    <option value="2" {% if evento.situation == 2 %}selected{% endif %}>Avisado</option>
+                                    <option value="3" {% if evento.situation == 3 %}selected{% endif %}>Avisado Marcelo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Link</label>
+                                <input type="text" name="link" class="form-control" value="{{ evento.link }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Notas</label>
+                                <textarea name="notes" class="form-control">{{ evento.notes }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Paginação -->
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if eventos.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=eventos.prev_num) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% endif %}
+        {% for num in eventos.iter_pages(left_edge=2, right_edge=2, left_current=1, right_current=1) %}
+            <li class="page-item {% if num == eventos.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=num) }}">{{ num }}</a>
+            </li>
+        {% endfor %}
+        {% if eventos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=eventos.next_num) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endblock %}
