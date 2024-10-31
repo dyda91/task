@@ -9,7 +9,7 @@
         </h1>
         <button type="button" class="btn btn-primary mb-2" data-toggle="modal" data-target="#addEventModal">
             <i class="bi bi-plus-square"></i>
-             Adicionar Nova Tarefa
+            Adicionar Nova Tarefa
         </button>
     </div>
 </div>
@@ -28,8 +28,13 @@
                 <form action="{{ url_for('add_event') }}" method="POST">
                     {{ form.hidden_tag() }}
                     <div class="form-group">
-                        {{ form.task.label }}
-                        {{ form.task(class="form-control", required=True) }}
+                        <label for="task">Tarefa</label>
+                        <select name="task" class="form-control" required>
+                            <option value="0">Audiência</option>
+                            <option value="1">Recurso</option>
+                            <option value="2">Emenda</option>
+                            <option value="3">Outros</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         {{ form.name.label }}
@@ -64,8 +69,44 @@
                             <option value="3">Avisado Marcelo</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <input type="checkbox" name="notify_second_number" id="notify_second_number">
+                        <label for="notify_second_number">Notificar Dr. Joatan</label>
+                    </div>
                     <button type="submit" class="btn btn-primary">Salvar</button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para exibir tarefas do dia -->
+<div class="modal fade" id="todayTasksModal" tabindex="-1" role="dialog" aria-labelledby="todayTasksModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="todayTasksModalLabel">Tarefas de Hoje</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% if eventos_hoje %}
+                    <ul>
+                        {% for evento in eventos_hoje %}
+                            <li>{{ evento.task }} - de <strong>{{ evento.name }}</strong> - {{ evento.time }}: {{ evento.notes }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>Não há tarefas para hoje.</p>
+                {% endif %}
+                <div class="form-check mt-3">
+                    <input type="checkbox" class="form-check-input" id="dontShowToday" onclick="setHidePopupCookie()">
+                    <label class="form-check-label" for="dontShowToday">Não mostrar novamente hoje</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
@@ -82,6 +123,7 @@
             <th>Situação</th>
             <th>Link</th>
             <th>Notas</th>
+            <th>NDJ</th>
             <th>Editar/Excluir</th>
         </tr>
     </thead>
@@ -92,21 +134,23 @@
                 {% if evento.task == 0 %} Audiência
                 {% elif evento.task == 1 %} Recurso
                 {% elif evento.task == 2 %} Emenda
+                {% elif evento.task == 3 %} Outros
                 {% else %} Desconhecido
                 {% endif %}
             </td>
             <td class="fixed-cell">{{ evento.name }}</td>
             <td class="fixed-cell">{{ evento.date }}</td>
             <td class="fixed-cell">{{ evento.time }}</td>
-            <td class="fixed-cell {% if evento.situation == 0 %}text-secondary{% elif evento.situation == 1 %}text-danger{% else %}table-success{% endif %}">
-                {% if evento.situation == 0 %} Não Avisado
-                {% elif evento.situation == 1 %} Não se Aplica
+            <td class="fixed-cell {% if evento.situation == 0 %}text-secondary{% elif evento.situation == 1 %}text-danger{% else %}text-success{% endif %}">
+                {% if evento.situation == 0 %} Não se Aplica
+                {% elif evento.situation == 1 %} Não Avisado
                 {% elif evento.situation == 2 %} Avisado
-                {% else %} Avisado Marcelo
+                {% else %} Av. Marcelo
                 {% endif %}
             </td>
             <td class="fixed-cell">{{ evento.link }}</td>
             <td class="fixed-cell">{{ evento.notes }}</td>
+            <td class="fixed-cell">{{ 'Sim' if evento.notify_second_number else 'Não' }}</td>
             <td class="fixed-cell">
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editEventModal{{ evento.id }}">
                     <i class="bi bi-pencil-square"></i>
@@ -133,7 +177,16 @@
                         <form action="{{ url_for('update_event', id=evento.id) }}" method="POST">
                             <input type="hidden" name="process_number" value="{{ evento.process_number }}">
                             <div class="form-group">
-                                <label>Nome do Evento</label>
+                                <label for="task">Tarefa</label>
+                                <select name="task" class="form-control" required>
+                                    <option value="0" {% if evento.task == 0 %}selected{% endif %}>Audiência</option>
+                                    <option value="1" {% if evento.task == 1 %}selected{% endif %}>Recurso</option>
+                                    <option value="2" {% if evento.task == 2 %}selected{% endif %}>Emenda</option>
+                                    <option value="3" {% if evento.task == 3 %}selected{% endif %}>Outros</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Nome</label>
                                 <input type="text" name="name" class="form-control" value="{{ evento.name }}" required>
                             </div>
                             <div class="form-group">
@@ -147,8 +200,8 @@
                             <div class="form-group">
                                 <label>Situação</label>
                                 <select class="form-control" name="situation" required>
-                                    <option value="0" {% if evento.situation == 0 %}selected{% endif %}>Não Avisado</option>
-                                    <option value="1" {% if evento.situation == 1 %}selected{% endif %}>Não se Aplica</option>
+                                    <option value="0" {% if evento.situation == 0 %}selected{% endif %}>Não se Aplica</option>
+                                    <option value="1" {% if evento.situation == 1 %}selected{% endif %}>Não Avisado</option>
                                     <option value="2" {% if evento.situation == 2 %}selected{% endif %}>Avisado</option>
                                     <option value="3" {% if evento.situation == 3 %}selected{% endif %}>Avisado Marcelo</option>
                                 </select>
@@ -160,6 +213,10 @@
                             <div class="form-group">
                                 <label>Notas</label>
                                 <textarea name="notes" class="form-control">{{ evento.notes }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <input type="checkbox" name="notify_second_number" id="notify_second_number_{{ evento.id }}" {% if evento.notify_second_number %}checked{% endif %}>
+                                <label for="notify_second_number_{{ evento.id }}">Notificar Dr. Joatan</label>
                             </div>
                             <button type="submit" class="btn btn-primary">Salvar</button>
                         </form>
@@ -195,4 +252,19 @@
         {% endif %}
     </ul>
 </nav>
+
+{% if eventos_hoje or not ocultar_popup %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            $('#todayTasksModal').modal('show');
+        });
+
+        function setHidePopupCookie() {
+            if (document.getElementById("dontShowToday").checked) {
+                fetch("{{ url_for('ocultar_popup') }}", { method: 'POST' });
+            }
+        }
+    </script>
+{% endif %}
+
 {% endblock %}

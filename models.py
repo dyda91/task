@@ -7,11 +7,12 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     process_number = db.Column(db.String, nullable=True)
-    date = db.Column(db.String, nullable=False)  # Agora como String
-    time = db.Column(db.String, nullable=False)   # Agora como String
+    date = db.Column(db.String, nullable=False)
+    time = db.Column(db.String, nullable=False)
     task = db.Column(db.Integer, nullable=False)
     link = db.Column(db.String, nullable=True)
     notes = db.Column(db.String, nullable=True)
     notified = db.Column(db.Boolean, default=False)
+    notified_one_hour = db.Column(db.Boolean, default=False)
     situation = db.Column(db.Integer, default=0)
-
+    notify_second_number = db.Column(db.Boolean, default=False)  
